@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧤 설거지 도우미</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #0a0e1a;
+    font-family: 'Courier New', monospace;
+    color: #e0eaff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  #app { width: 100%; max-width: 400px; }
+
+  /* MODE SELECT */
+  #mode-select { text-align: center; }
+  .hero-icon { font-size: 3.5rem; margin-bottom: 0.5rem; }
+  h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.1em; color: #f0f0f0; margin-bottom: 0.3rem; }
+  .subtitle { color: #444; font-size: 0.8rem; margin-bottom: 2rem; }
+
+  .mode-card {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+    transition: all 0.2s;
+    font-family: 'Courier New', monospace;
+  }
+  .mode-card:hover { background: #1a1a1a; }
+  .mode-card.a:hover { border-color: #4ade80; }
+  .mode-card.b:hover { border-color: #60a5fa; }
+
+  .mode-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .label-a { background: #4ade8022; color: #4ade80; }
+  .label-b { background: #60a5fa22; color: #60a5fa; }
+
+  .mode-title { color: #f0f0f0; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .mode-desc { color: #666; font-size: 0.78rem; }
+
+  /* MAIN APP */
+  #main-app { display: none; }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .back-btn {
+    background: none; border: none; color: #444;
+    font-size: 0.8rem; cursor: pointer;
+    font-family: 'Courier New', monospace;
+  }
+  .mode-badge {
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .progress-bar {
+    display: flex; gap: 5px; margin-bottom: 2rem;
+  }
+  .prog-seg {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: #1a1f2e;
+    transition: background 0.4s;
+  }
+
+  .step-num { color: #1e3a5f; font-size: 0.75rem; margin-bottom: 0.4rem; }
+  .step-emoji { font-size: 3.5rem; margin-bottom: 0.8rem; }
+  .step-text { font-size: 1.4rem; font-weight: 700; line-height: 1.4; margin-bottom: 0.4rem; }
+  .step-dur { font-size: 0.8rem; margin-bottom: 1.5rem; }
+
+  /* AI bubble */
+  .ai-bubble {
+    background: #0f1629;
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 56px;
+  }
+  .ai-text { color: #a0c4ff; font-size: 0.88rem; line-height: 1.5; }
+
+  /* Mic status */
+  .mic-status {
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.8rem;
+    transition: all 0.3s;
+    border: 1px solid;
+  }
+  .mic-on { background: #ef444415; border-color: #ef4444; color: #ef4444; }
+  .mic-off { background: #60a5fa15; border-color: #60a5fa; color: #60a5fa; }
+  .mic-on-a { background: #ef444415; border-color: #ef4444; color: #ef4444; }
+  .mic-off-a { background: #4ade8015; border-color: #4ade80; color: #4ade80; }
+
+  .hint { color: #1e3a5f; font-size: 0.72rem; text-align: center; margin-bottom: 1rem; }
+
+  .transcript-box {
+    color: #2a4a7a; font-size: 0.75rem; margin-bottom: 0.8rem; min-height: 1.2rem;
+  }
+
+  /* Done screen */
+  #done-screen {
+    text-align: center;
+    display: none;
+  }
+  .done-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .done-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .done-sub { font-size: 0.85rem; margin-bottom: 2rem; }
+  .restart-btn {
+    border-radius: 10px;
+    padding: 0.9rem 2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.05em;
+    border: 1px solid;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .blink { animation: blink 1s infinite; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- MODE SELECT -->
+  <div id="mode-select">
+    <div class="hero-icon">🧤</div>
+    <h1>설거지 음성 도우미</h1>
+    <p class="subtitle">고무장갑 껴도 OK — 그냥 말해</p>
+
+    <button class="mode-card a" onclick="startMode('simple')">
+      <span class="mode-label label-a">A 모드</span>
+      <div>
+        <div class="mode-title">단순 음성 체크</div>
+        <div class="mode-desc">"했어" 한마디로 다음 단계 · 핸즈프리</div>
+      </div>
+    </button>
+
+    <button class="mode-card b" onclick="startMode('ai')">
+      <span class="mode-label label-b">B 모드</span>
+      <div>
+        <div class="mode-title">AI 음성 도우미</div>
+        <div class="mode-desc">자연어 이해 + 격려 멘트 · 핸즈프리</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app">
+    <div class="top-bar">
+      <button class="back-btn" onclick="goBack()">← 뒤로</button>
+      <span class="mode-badge" id="mode-badge"></span>
+    </div>
+
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <div id="step-screen">
+      <div class="step-num" id="step-num"></div>
+      <div class="step-emoji" id="step-emoji"></div>
+      <div class="step-text" id="step-text"></div>
+      <div class="step-dur" id="step-dur"></div>
+
+      <div class="ai-bubble" id="ai-bubble" style="display:none">
+        <span style="font-size:1.2rem;flex-shrink:0">🤖</span>
+        <span class="ai-text" id="ai-text"></span>
+      </div>
+
+      <div class="mic-status" id="mic-status">🎤 마이크 시작 중...</div>
+      <div class="transcript-box" id="transcript-box"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <div id="done-screen">
+      <div class="done-icon">✨</div>
+      <div class="done-title" id="done-title">다 했다!</div>
+      <div class="done-sub" id="done-sub">생각보다 별거 아니었지?</div>
+      <button class="restart-btn" id="restart-btn" onclick="restart()">다시 시작</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STEPS = [
+  { emoji: "🚰", text: "싱크대 앞에 그냥 서기", dur: "10초" },
+  { emoji: "💧", text: "물 틀기", dur: "10초" },
+  { emoji: "🥄", text: "제일 작은 것 하나만 집기", dur: "10초" },
+  { emoji: "✋", text: "그것만 씻기", dur: "30초" },
+  { emoji: "🫙", text: "그릇 하나만 헹구기", dur: "30초" },
+  { emoji: "🛁", text: "나머지 물에 담가두기", dur: "1분" },
+  { emoji: "🧼", text: "쉬운 것부터 하나씩", dur: "1분" },
+  { emoji: "🏁", text: "물 잠그고 대충 닦기", dur: "30초" },
+];
+
+const TRIGGERS = ["했어","다음","완료","넘어가","오케이","ok","done","next","해","다했어","끝"];
+
+let currentMode = null;
+let currentStep = 0;
+let recognition = null;
+let isListening = false;
+let aiLoading = false;
+
+const ACCENT_A = "#4ade80";
+const ACCENT_B = "#60a5fa";
+
+function accent() { return currentMode === 'simple' ? ACCENT_A : ACCENT_B; }
+
+// ── 모드 시작 ──────────────────────────────────
+function startMode(mode) {
+  currentMode = mode;
+  currentStep = 0;
+
+  document.getElementById('mode-select').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+
+  const badge = document.getElementById('mode-badge');
+  if (mode === 'simple') {
+    badge.textContent = 'A 모드';
+    badge.style.color = ACCENT_A;
+  } else {
+    badge.textContent = 'B 모드 · AI';
+    badge.style.color = ACCENT_B;
+  }
+
+  if (mode === 'ai') {
+    document.getElementById('ai-bubble').style.display = 'flex';
+    setAiText("준비됐어? 시작해보자 💧");
+  }
+
+  renderStep();
+  startListening();
+}
+
+function goBack() {
+  stopListening();
+  currentMode = null;
+  document.getElementById('mode-select').style.display = 'block';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('done-screen').style.display = 'none';
+  document.getElementById('step-screen').style.display = 'block';
+}
+
+// ── 렌더링 ─────────────────────────────────────
+function renderStep() {
+  const s = STEPS[currentStep];
+  const ac = accent();
+
+  // progress
+  const bar = document.getElementById('progress-bar');
+  bar.innerHTML = STEPS.map((_, i) => {
+    const bg = i < currentStep ? ac : i === currentStep ? ac + '88' : '#1a1f2e';
+    return `<div class="prog-seg" style="background:${bg}"></div>`;
+  }).join('');
+
+  document.getElementById('step-num').textContent = `${currentStep + 1} / ${STEPS.length}`;
+  document.getElementById('step-emoji').textContent = s.emoji;
+  document.getElementById('step-text').textContent = s.text;
+  document.getElementById('step-text').style.color = '#e0eaff';
+  document.getElementById('step-dur').textContent = '⏱ ' + s.dur;
+  document.getElementById('step-dur').style.color = ac;
+
+  document.getElementById('transcript-box').textContent = '';
+
+  if (currentMode === 'simple') {
+    document.getElementById('hint').textContent = '"했어" / "다음" / "완료" 라고 말해보세요';
+  } else {
+    document.getElementById('hint').textContent = '뭐든 편하게 말해 — AI가 알아서 해석해줘';
+  }
+}
+
+function setMicStatus(on) {
+  const el = document.getElementById('mic-status');
+  if (on) {
+    el.textContent = '🔴 듣는 중...';
+    el.className = 'mic-status ' + (currentMode === 'simple' ? 'mic-on-a' : 'mic-on');
+    el.classList.add('blink');
+  } else {
+    el.textContent = '🎤 대기 중 (자동 재시작)';
+    el.className = 'mic-status ' + (currentMode === 'simple' ? 'mic-off-a' : 'mic-off');
+    el.classList.remove('blink');
+  }
+}
+
+function setAiText(txt) {
+  document.getElementById('ai-text').textContent = txt;
+}
+
+// ── 음성 인식 ──────────────────────────────────
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('mic-status').textContent = '❌ 이 브라우저는 음성인식 미지원 (Chrome 사용해주세요)';
+    return;
+  }
+
+  recognition = new SR();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    isListening = true;
+    setMicStatus(true);
+  };
+
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    document.getElementById('transcript-box').textContent = '🎤 "' + text + '"';
+    handleVoice(text);
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    setMicStatus(false);
+    // 자동 재시작 (핸즈프리 핵심)
+    if (currentMode && currentStep < STEPS.length && !aiLoading) {
+      setTimeout(() => startListening(), 300);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    isListening = false;
+    // no-speech는 정상 — 그냥 재시작
+    if (currentMode && currentStep < STEPS.length) {
+      setTimeout(() => startListening(), 500);
+    }
+  };
+
+  recognition.start();
+}
+
+function stopListening() {
+  if (recognition) {
+    recognition.onend = null;
+    recognition.onerror = null;
+    recognition.stop();
+    recognition = null;
+  }
+  isListening = false;
+}
+
+// ── 음성 처리 ──────────────────────────────────
+function handleVoice(text) {
+  if (currentMode === 'simple') {
+    const hit = TRIGGERS.some(w => text.includes(w));
+    if (hit) nextStep();
+  } else {
+    callClaude(text);
+  }
+}
+
+function nextStep() {
+  currentStep++;
+  if (currentStep >= STEPS.length) {
+    showDone();
+  } else {
+    renderStep();
+  }
+}
+
+function showDone() {
+  stopListening();
+  document.getElementById('step-screen').style.display = 'none';
+  document.getElementById('done-screen').style.display = 'block';
+
+  const ac = accent();
+  document.getElementById('done-title').style.color = ac;
+  document.getElementById('done-sub').style.color = ac + '99';
+  const rb = document.getElementById('restart-btn');
+  rb.style.color = ac;
+  rb.style.borderColor = ac;
+  rb.style.background = ac + '15';
+}
+
+function restart() {
+  currentStep = 0;
+  document.getElementById('done-screen').style.display = 'none';
+  document.getElementById('step-screen').style.display = 'block';
+  if (currentMode === 'ai') setAiText("다시 시작! 할 수 있어 💪");
+  renderStep();
+  startListening();
+}
+
+// ── Claude API ─────────────────────────────────
+async function callClaude(userText) {
+  aiLoading = true;
+  setAiText("생각 중...");
+
+  const stepInfo = currentStep < STEPS.length
+    ? `현재 단계: "${STEPS[currentStep].text}" (${currentStep + 1}/${STEPS.length})`
+    : "모든 단계 완료";
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `너는 설거지 도우미 AI야. 사용자가 고무장갑 끼고 설거지 단계별로 하고 있어.
+사용자 말 듣고 반드시 JSON만 반환해:
+- 완료/다음 의사 → {"action":"next","message":"짧은 격려"}
+- 건너뛰기 → {"action":"skip","message":"OK 메시지"}  
+- 힘들다/귀찮다 → {"action":"stay","message":"공감+격려"}
+- 기타 → {"action":"stay","message":"자연스러운 반응"}
+메시지는 20자 이내. 말투는 친근하고 캐주얼. JSON만, 다른 텍스트 없이.`,
+        messages: [{ role: "user", content: `${stepInfo}\n사용자: "${userText}"` }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content?.map(c => c.text || "").join("") || "";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    setAiText(parsed.message);
+
+    if (parsed.action === "next" || parsed.action === "skip") {
+      setTimeout(() => nextStep(), 800);
+    }
+  } catch(e) {
+    setAiText("다시 말해줄래? 못 들었어");
+  }
+
+  aiLoading = false;
+  // AI 응답 끝나면 다시 듣기 시작
+  if (currentMode && currentStep < STEPS.length) {
+    setTimeout(() => startListening(), 1000);
+  }
+}
+</script>
+</body>
+</html>
